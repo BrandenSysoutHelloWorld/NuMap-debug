@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/NuMap/app/src/main/res/drawable-v24/baseline_arrow_back_24.xml" value="0.3675" />
+        <entry key="..\:/NuMap/app/src/main/res/drawable-v24/baseline_fort_24.xml" value="0.3675" />
+        <entry key="..\:/NuMap/app/src/main/res/drawable-v24/baseline_settings_20.xml" value="0.3675" />
+        <entry key="..\:/NuMap/app/src/main/res/drawable-v24/baseline_settings_24.xml" value="0.3675" />
+        <entry key="..\:/NuMap/app/src/main/res/drawable-v24/baseline_star_24.xml" value="0.182" />
+        <entry key="..\:/NuMap/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.2005" />
+        <entry key="..\:/NuMap/app/src/main/res/drawable/editbackground.xml" value="0.208" />
+        <entry key="..\:/NuMap/app/src/main/res/drawable/ic_launcher_background.xml" value="0.2005" />
+        <entry key="..\:/NuMap/app/src/main/res/layout-w1240dp/activity_login.xml" value="0.20481927710843373" />
+        <entry key="..\:/NuMap/app/src/main/res/layout-w936dp/activity_login.xml" value="0.2390625" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/activity_account.xml" value="0.26066350710900477" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/activity_display_place_detail.xml" value="0.36666666666666664" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/activity_landmark.xml" value="0.3120471014492754" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/activity_login.xml" value="0.25" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/activity_main.xml" value="0.2572463768115942" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/activity_maps.xml" value="0.28894927536231885" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/activity_maps_rework.xml" value="0.33605072463768115" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/activity_register.xml" value="0.22" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/activity_settings.xml" value="0.35643115942028986" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/menu_navigation.xml" value="0.2484375" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/pop_up.xml" value="0.22" />
+        <entry key="..\:/NuMap/app/src/main/res/layout/rv_layout.xml" value="0.36666666666666664" />
+        <entry key="..\:/NuMap/app/src/main/res/menu/bottom_nav_menu.xml" value="0.36666666666666664" />
+        <entry key="..\:/NuMap/app/src/main/res/mipmap-anydpi-v26/ic_user.xml" value="0.3675" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>
