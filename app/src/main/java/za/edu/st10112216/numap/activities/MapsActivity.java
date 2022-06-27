@@ -75,11 +75,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
@@ -88,8 +91,11 @@ import java.util.List;
 import java.util.Objects;
 
 import za.edu.st10112216.numap.R;
+import za.edu.st10112216.numap.classes.FavouriteLandmarks;
+import za.edu.st10112216.numap.classes.PlaceDetailsClass;
 import za.edu.st10112216.numap.classes.UserDetailsClass;
 import za.edu.st10112216.numap.dataprocessers.FetchData;
+import za.edu.st10112216.numap.dataprocessers.FetchDataFavLandmark;
 import za.edu.st10112216.numap.dataprocessers.FetchDetailData;
 import za.edu.st10112216.numap.dataprocessers.PolylineData;
 import za.edu.st10112216.numap.displays.DisplayPlaceDetail;
@@ -120,9 +126,12 @@ public class MapsActivity extends FragmentActivity
     // Firebase
     DatabaseReference mDatabaseRef;
     FirebaseDatabase mDatabase;
+    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
     // User Details Class
     private UserDetailsClass userDetailsClass;
+
+    FavouriteLandmarks favouriteLandmarks = new FavouriteLandmarks();
 
     // Buttons
     ImageButton currentLocationImgBtn;
@@ -133,11 +142,14 @@ public class MapsActivity extends FragmentActivity
     Button directions;
     Button start_nav;
     Button end_nav;
+    Button find_landmark;
 
     boolean ttmp = false;
+    Spinner spin;
 
     // Landmark Overlay Buttons
     ImageButton returnBtn;
+    ImageButton returnFav_Btn;
     ImageButton fireBtn;
     ImageButton medicalBtn;
     ImageButton policeBtn;
@@ -154,10 +166,11 @@ public class MapsActivity extends FragmentActivity
     private Marker currentLocationMarker;
     private GeoApiContext mGeoApiContext = null;
     private ArrayList<PolylineData> mPolylinesData = new ArrayList<>();
-    private ArrayList<PolylineData> mPolyline = new ArrayList<>();
     Double distance;
     boolean tmp = false;
     boolean tmpStart = false;
+    private TextView destInfo;
+    double tmpDuration = 0;
 
     // Markers
     private Marker mSelectedMarker = null;
@@ -171,7 +184,6 @@ public class MapsActivity extends FragmentActivity
 
     // Permissions
     boolean isPermissionGranted = false;
-    boolean isPermissionGranted1 = false;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
 
     // Navigation bar
@@ -185,10 +197,12 @@ public class MapsActivity extends FragmentActivity
         tmp = false;
         tmpStart = false;
 
+        spin = findViewById(R.id.fav_spin);
+
         // Layouts
-        ol = (LinearLayout) findViewById(R.id.overlay_landmark);
-        tv = (RelativeLayout) findViewById(R.id.main);
-        fav = (LinearLayout) findViewById(R.id.overlay_fav_landmark);
+        ol = findViewById(R.id.overlay_landmark);
+        tv = findViewById(R.id.main);
+        fav = findViewById(R.id.overlay_fav_landmark);
         fav.setVisibility(View.GONE);
         ol.setVisibility(View.GONE);
 
@@ -201,7 +215,6 @@ public class MapsActivity extends FragmentActivity
 
         // Navigation Bar
         bottomNavigationView = findViewById(R.id.bottom_navigation_view);
-
         bottomNavigationView.setOnNavigationItemSelectedListener(this::onOptionsItemSelected);
 
         // Buttons
@@ -213,6 +226,8 @@ public class MapsActivity extends FragmentActivity
         fav_landmark = findViewById(R.id.btn_favorite);
         start_nav = findViewById(R.id.btn_start_nav);
         end_nav = findViewById(R.id.btn_end_nav);
+        returnFav_Btn = findViewById(R.id.landmarkFav_btn_return);
+        find_landmark = findViewById(R.id.fav_btn_mark);
 
         // Landmark Overlay Buttons
         returnBtn = findViewById(R.id.landmark_btn_return);
@@ -227,6 +242,7 @@ public class MapsActivity extends FragmentActivity
 
         // Location Variables
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
+        destInfo = findViewById(R.id.dest_info);
 
         // Checks Location Permissions
         checkPermissions();
@@ -276,7 +292,7 @@ public class MapsActivity extends FragmentActivity
     private void addPolylinesToMap(final DirectionsResult result){
         new Handler(Looper.getMainLooper()).post(() -> {
             Log.d(TAG, "run: result routes: " + result.routes.length);
-            if (mPolylinesData.size() > 0){
+            if (mPolylinesData.size() > 0 && !tmp){
                 for (PolylineData polylineData: mPolylinesData){
                     polylineData.getPolyline().remove();
                 }
@@ -305,7 +321,7 @@ public class MapsActivity extends FragmentActivity
                 polyline.setClickable(true);
                 mPolylinesData.add(new PolylineData(polyline, route.legs[0]));
 
-                double tmpDuration = route.legs[0].duration.inSeconds;
+                tmpDuration = route.legs[0].duration.inSeconds;
                 if (tmpDuration < duration) {
                     duration = tmpDuration;
                     onPolylineClick(polyline);
@@ -316,42 +332,7 @@ public class MapsActivity extends FragmentActivity
         });
     }
 
-    private void updatePolyline(final DirectionsResult result) {
-        new Handler(Looper.getMainLooper()).post(() -> {
-            Log.d(TAG, "run: result routes: " + result.routes.length);
-            if (mPolylinesData.size() > 0) {
-                for (PolylineData polylineData : mPolylinesData) {
-                    polylineData.getPolyline().remove();
-                }
-                mPolylinesData.clear();
-                mPolylinesData = new ArrayList<>();
-            }
-
-            double duration = 99999;
-            for (DirectionsRoute route : result.routes) {
-                Log.d(TAG, "run: leg: " + route.legs[0].toString());
-                List<com.google.maps.model.LatLng> decodedPath = PolylineEncoding.decode(route.overviewPolyline.getEncodedPath());
-
-                List<LatLng> newDecodedPath = new ArrayList<>();
-
-                // This loops through all the LatLng coordinates of ONE polyline.
-                for (com.google.maps.model.LatLng latLng : decodedPath) {
-                    newDecodedPath.add(new LatLng(
-                            latLng.lat,
-                            latLng.lng
-                    ));
-                }
-
-                mMap.addPolyline(new PolylineOptions().zIndex(1));
-                Polyline polyline = mMap.addPolyline(new PolylineOptions().addAll(newDecodedPath));
-                polyline.setColor(ContextCompat.getColor(getApplicationContext(), android.R.color.darker_gray));
-                polyline.setClickable(false);
-                mPolylinesData.add(new PolylineData(polyline, route.legs[0]));
-            }
-            mSelectedMarker.setVisible(false);
-        });
-    }
-
+    // Zooms onto polylines
     public void zoomRoute(List<LatLng> lstLatLngRoute) {
 
         if (mMap == null || lstLatLngRoute == null || lstLatLngRoute.isEmpty()) return;
@@ -488,6 +469,7 @@ public class MapsActivity extends FragmentActivity
         directions.setVisibility(Button.GONE);
         start_nav.setVisibility(Button.GONE);
         end_nav.setVisibility(View.GONE);
+        destInfo.setVisibility(View.GONE);
 
         //Initialize SDK
         String apikey = getString(R.string.map_key);
@@ -513,7 +495,7 @@ public class MapsActivity extends FragmentActivity
                 latLng3));
 
         // Select a country for relatable searches
-        autocompleteFragment.setCountries("UK");
+        autocompleteFragment.setCountries("ZA");
 
         // Set up a PlaceSelectionListener to handle the response.
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
@@ -535,11 +517,15 @@ public class MapsActivity extends FragmentActivity
                 markerSnippet = place.getAddress();
                 mMap.addMarker(markerOptions);
 
-                mMap.setOnMarkerClickListener(marker -> {
-                    if (directions.getVisibility() == Button.GONE) {
-                        directions.setVisibility(Button.VISIBLE);
-                    }
+                if (directions.getVisibility() == Button.GONE) {
+                    directions.setVisibility(Button.VISIBLE);
+                }
 
+                if (end_nav.getVisibility() == Button.VISIBLE) {
+                    end_nav.setVisibility(Button.GONE);
+                }
+
+                mMap.setOnMarkerClickListener(marker -> {
                     marker.setVisible(false);
                     mSelectedMarker = marker;
                     markerSnippet = place.getName() + '\n' + place.getAddress();
@@ -554,9 +540,9 @@ public class MapsActivity extends FragmentActivity
                         //instantiate the popup.xml layout file
                         LayoutInflater layoutInflater = (LayoutInflater) MapsActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                         @SuppressLint("InflateParams") View customView = layoutInflater.inflate(R.layout.pop_up, null);
-                        TextView popupText = (TextView) customView.findViewById(R.id.popup_text);
-                        closePopup = (Button) customView.findViewById(R.id.popup_navigate);
-                        moreInfo = (Button) customView.findViewById(R.id.popup_moreInfo);
+                        TextView popupText = customView.findViewById(R.id.popup_text);
+                        closePopup = customView.findViewById(R.id.popup_navigate);
+                        moreInfo = customView.findViewById(R.id.popup_moreInfo);
                         mSelectedMarker = marker;
 
                         //instantiate popup window
@@ -583,6 +569,7 @@ public class MapsActivity extends FragmentActivity
                         Intent intent;
                         intent = new Intent(MapsActivity.this, DisplayPlaceDetail.class);
                         startActivity(intent);
+
                     });
 
                     closePopup.setOnClickListener(view -> {
@@ -592,6 +579,7 @@ public class MapsActivity extends FragmentActivity
                         }
 
                         popupWindowSearched.dismiss();
+                        popupWindow.dismiss();
                         //popupWindow.dismiss();
 
                     });
@@ -631,11 +619,11 @@ public class MapsActivity extends FragmentActivity
 
             LayoutInflater layoutInflater = (LayoutInflater) MapsActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             @SuppressLint("InflateParams") View customView = layoutInflater.inflate(R.layout.pop_up, null);
-            TextView popupText = (TextView) customView.findViewById(R.id.popup_text);
-            closePopup = (Button) customView.findViewById(R.id.popup_navigate);
-            moreInfo = (Button) customView.findViewById(R.id.popup_moreInfo);
-            moreInfo.setText("Copy Link");
-            closePopup.setText("Share on Facebook");
+            TextView popupText = customView.findViewById(R.id.popup_text);
+            closePopup = customView.findViewById(R.id.popup_navigate);
+            moreInfo = customView.findViewById(R.id.popup_moreInfo);
+            moreInfo.setText(R.string.share_copy);
+            closePopup.setText(R.string.share_fb);
 
             //instantiate popup window
             popupWindowShareOption = new PopupWindow(customView, LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -670,9 +658,105 @@ public class MapsActivity extends FragmentActivity
 
         // Button Click Listener for favourite landmarks
         fav_landmark.setOnClickListener(v -> {
-            ttmp = true;
-            Toast.makeText(MapsActivity.this, "Walking Directions Enabled", Toast.LENGTH_SHORT).show();
+            tv.setVisibility(View.GONE);
+            fav.setVisibility(View.VISIBLE);
+            ArrayList<String> arrayList = new ArrayList<>();
+            final ArrayList<String> arrayList1 = new ArrayList<>();
+            final String[] placeName1 = new String[1];
+            final Object[] placeID = new Object[1];
 
+            mDatabaseRef.orderByChild("userID").equalTo(user.getUid()).addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                    mDatabaseRef.child(user.getUid()).child("FavouriteLandmarks").addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            for (DataSnapshot pulledUser: snapshot.getChildren()) {
+                                FavouriteLandmarks favouriteLandmarks = pulledUser.getValue(FavouriteLandmarks.class);
+                                assert favouriteLandmarks != null;
+                                arrayList.add(favouriteLandmarks.getID());
+                                arrayList1.add(favouriteLandmarks.getName());
+
+
+                            }
+
+                            ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(MapsActivity.this,
+                                    android.R.layout.simple_spinner_dropdown_item, arrayList);
+                            spin.setAdapter(arrayAdapter);
+
+                            spin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                                @Override
+                                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                                    placeName1[0] = parent.getItemAtPosition(position).toString();
+
+                                }
+                                @Override
+                                public void onNothingSelected(AdapterView<?> parent) {
+
+                                }
+
+                            });
+
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+
+            find_landmark.setOnClickListener(v1 -> {
+
+                for (String s: arrayList) {
+                    if (placeName1[0] != null) {
+                        if (placeName1[0].equals(s)) {
+                            mDatabaseRef.child(user.getUid()).child("FavouriteLandmarks").child(s).addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    for (DataSnapshot pulledUser: snapshot.getChildren()) {
+                                        Object id = pulledUser.getValue();
+                                        placeID[0] = id;
+                                    }
+                                    Log.d(TAG, "::" + placeID[0]);
+                                    String urlDetail = "https://maps.googleapis.com/maps/api/place/details/json?" +
+                                            "&place_id=" + placeID[0] +
+                                            "&key=" + getResources().getString(R.string.map_key);
+                                    Log.d("Link StringBuilder Data", urlDetail);
+
+                                    Object[] dataFetchDetail = new Object[2];
+                                    dataFetchDetail[0] = mMap;
+                                    dataFetchDetail[1] = urlDetail;
+
+                                    FetchDataFavLandmark fetchDataFavLandmark = new FetchDataFavLandmark();
+                                    fetchDataFavLandmark.execute(dataFetchDetail);
+                                    setLayoutInvisible();
+
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+
+            //ttmp = true; Walk directions enable.
+
+            returnFav_Btn.setOnClickListener(v1 -> {
+                tv.setVisibility(View.VISIBLE);
+                fav.setVisibility(View.GONE);
+            });
         });
 
         // Button Click Listeners for Landmark filter overlay
@@ -773,7 +857,7 @@ public class MapsActivity extends FragmentActivity
                     "&radius=1000" +
                     "&type=restaurant" +
                     "&sensor=true" +
-                    "&key=" + getResources().getString(R.string.map_key);
+                        "&key=" + getResources().getString(R.string.map_key);
             Log.d("Link StringBuilder", url);
 
             Object[] dataFetch = new Object[2];
@@ -866,9 +950,9 @@ public class MapsActivity extends FragmentActivity
                 //instantiate the popup.xml layout file
                 LayoutInflater layoutInflater = (LayoutInflater) MapsActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 @SuppressLint("InflateParams") View customView = layoutInflater.inflate(R.layout.pop_up, null);
-                TextView popupText = (TextView) customView.findViewById(R.id.popup_text);
-                closePopup = (Button) customView.findViewById(R.id.popup_navigate);
-                moreInfo = (Button) customView.findViewById(R.id.popup_moreInfo);
+                TextView popupText = customView.findViewById(R.id.popup_text);
+                closePopup = customView.findViewById(R.id.popup_navigate);
+                moreInfo = customView.findViewById(R.id.popup_moreInfo);
                 mSelectedMarker = marker;
 
                 //instantiate popup window
@@ -880,7 +964,7 @@ public class MapsActivity extends FragmentActivity
 
                 moreInfo.setOnClickListener(view -> {
                     String urlDetail = "https://maps.googleapis.com/maps/api/place/details/json?" +
-                            "fields=icon%2Cname%2Crating%2Cformatted_phone_number%2Copening_hours%2Cwebsite" +
+                            "fields=icon%2Cname%2Crating%2Cformatted_phone_number%2Copening_hours%2Cwebsite%2Cplace_id" +
                             "&place_id=" + markerName +
                             "&key=" + getResources().getString(R.string.map_key);
                     Log.d("Link StringBuilder Data", urlDetail);
@@ -927,6 +1011,7 @@ public class MapsActivity extends FragmentActivity
             tmp = true;
             start_nav.setVisibility(View.GONE);
             end_nav.setVisibility(View.VISIBLE);
+            destInfo.setVisibility(View.VISIBLE);
 
             if (tmpStart) {
                 for (PolylineData polylineData : mPolylinesData) {
@@ -941,6 +1026,7 @@ public class MapsActivity extends FragmentActivity
         end_nav.setOnClickListener(v -> {
             directions.setVisibility(View.GONE);
             end_nav.setVisibility(View.GONE);
+            destInfo.setVisibility(View.GONE);
             resetMap();
             tmpStart = false;
             tmp = false;
@@ -958,12 +1044,13 @@ public class MapsActivity extends FragmentActivity
             if (popupWindow != null) {
                 popupWindow.dismiss();
             }
+
+            if (popupWindowShareOption != null) {
+                popupWindowShareOption.dismiss();
+            }
         });
 
-        mMap.setOnMapLongClickListener(latLng -> {
-            tmpStart = false;
-
-        });
+        mMap.setOnMapLongClickListener(latLng -> tmpStart = false);
 
     }
 
@@ -1005,6 +1092,7 @@ public class MapsActivity extends FragmentActivity
 
     // Updates Users current Location. Places a Marker.
     private void getCurrentLocationUpdate() {
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MapsActivity.this);
 
         if (ActivityCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION) !=
@@ -1039,8 +1127,8 @@ public class MapsActivity extends FragmentActivity
                 Log.d("LOCATION : ", "User Location Updated ! - " + userDetailsClass.getLat() + "," + userDetailsClass.getLng());
 
                 if (tmpStart) {
-                    //gotoLocation(lat, lng);
                     animateToLocationBearing(locationResult.getLastLocation());
+                    getDistance();
                 }
             }
 
@@ -1090,6 +1178,7 @@ public class MapsActivity extends FragmentActivity
     public void writeLocation(double lat, double lng) {
 
         userDetailsClass = new UserDetailsClass(lat, lng);
+       // mDatabaseRef.child(user.getUid()).child("landmarkFav").child(name).setValue(ID);
 
     }
 
@@ -1097,6 +1186,11 @@ public class MapsActivity extends FragmentActivity
     public void setLayoutInvisible() {
         ol.setVisibility(View.GONE);
         tv.setVisibility(View.VISIBLE);
+
+        if (fav.getVisibility() == View.VISIBLE) {
+            tv.setVisibility(View.VISIBLE);
+            fav.setVisibility(View.GONE);
+        }
     }
 
     // Manages the Popupview visibility. Sets Popview invisible.
@@ -1105,6 +1199,7 @@ public class MapsActivity extends FragmentActivity
         tv.setVisibility(View.GONE);
     }
 
+    // Checks which polyline is selected
     @Override
     public void onPolylineClick(@NonNull Polyline polyline) {
         int index = 0;
@@ -1139,6 +1234,7 @@ public class MapsActivity extends FragmentActivity
         }
     }
 
+    // Resets the Map and clears Vars
     private void resetMap(){
         getCurrentLoc();
         getCurrentLocationUpdate();
@@ -1172,6 +1268,7 @@ public class MapsActivity extends FragmentActivity
         }
     }
 
+    // Method to hide keyboard
     public static void hideKeyboard(MapsActivity activity) {
         InputMethodManager imm = (InputMethodManager) activity.getSystemService(MapsActivity.INPUT_METHOD_SERVICE);
         //Find the currently focused view, so we can grab the correct window token from it.
@@ -1183,6 +1280,7 @@ public class MapsActivity extends FragmentActivity
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
+    // Calculates Distance between two points
     public void getDistance() {
         LatLng startLatLng = new LatLng(lat,lng);
         LatLng endLatLng = new LatLng(elat, elng);
@@ -1195,23 +1293,22 @@ public class MapsActivity extends FragmentActivity
 
         // Gets Users Distance Unit Preference
         mDatabaseRef.orderByChild("userID").equalTo(uid).addValueEventListener(new ValueEventListener() {
+            @SuppressLint({"DefaultLocale", "SetTextI18n"})
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 for (DataSnapshot pulledUser : snapshot.getChildren()) {
                     UserDetailsClass userdetails = pulledUser.getValue(UserDetailsClass.class);
                     assert userdetails != null;
+
                     unitState[0] = userdetails.isUnitState();
                     if (!unitState[0]){
-                        Toast.makeText(MapsActivity.this, "Distance From You\n " + String.format("%.2f", distance / 1000) + "km", Toast.LENGTH_SHORT).show();
-
+                        destInfo.setText(String.format("%.2f", distance / 1000) + "km | ETA(From Start): " + String.format("%.2f", (tmpDuration/60)/60) + "hrs");
                     }else {
                         double fdistance = distance/1000;
                         double aDistance = fdistance/2;
                         double bDistance = aDistance/4;
                         distance = aDistance + bDistance;
-                        Toast.makeText(MapsActivity.this, "Distance From You\n " + String.format("%.2f", distance) + "mi", Toast.LENGTH_SHORT).show();
-
-
+                        destInfo.setText(String.format("%.2f", distance) + "mi | ETA(From Start): " + String.format("%.2f", (tmpDuration/60)/60) + "hrs");
                     }
                 }
             }

@@ -1,5 +1,7 @@
 package za.edu.st10112216.numap.classes;
 
+import androidx.annotation.NonNull;
+
 public class PlaceDetailsClass {
     String name;
     String userId;
@@ -8,26 +10,37 @@ public class PlaceDetailsClass {
     String rating;
     String cellphone;
     String website;
+    String placeID;
 
     public PlaceDetailsClass() {
 
     }
+
 
     public PlaceDetailsClass(String userId, String name) {
         this.name = name;
         this.userId = userId;
     }
 
-    public PlaceDetailsClass(String name, String openCheck, double ratings, String cellphone, String website) {
+    public PlaceDetailsClass(String name, String openCheck, double ratings, String cellphone, String website, String placeID) {
         this.name = name;
         this.openCheck = openCheck;
         this.ratings = ratings;
         this.cellphone = cellphone;
         this.website = website;
+        this.placeID = placeID;
     }
 
     public String getUserId() {
         return userId;
+    }
+
+    public String getPlaceID() {
+        return placeID;
+    }
+
+    public void setPlaceID(String placeID) {
+        this.placeID = placeID;
     }
 
     public void setUserId(String userId) {
@@ -75,6 +88,7 @@ public class PlaceDetailsClass {
         this.website = website;
     }
 
+    @NonNull
     @Override
     public String toString() {
 

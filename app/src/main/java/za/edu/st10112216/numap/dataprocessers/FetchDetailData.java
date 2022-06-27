@@ -29,6 +29,7 @@ public class FetchDetailData extends AsyncTask<Object, String, String> {
     double rating;
     String website;
     String cellphone;
+    String placeID;
     String weekday;
 
   @Override
@@ -79,7 +80,7 @@ public class FetchDetailData extends AsyncTask<Object, String, String> {
                     openCheck = "Closed";
 
                 }
-            }else{
+            }else {
                 openCheck = "No Data";
             }
 
@@ -99,13 +100,17 @@ public class FetchDetailData extends AsyncTask<Object, String, String> {
                 website = "No Data";
             }
 
+            JSONObject getID = jsonObject.getJSONObject("result");
+            placeID = getID.getString("place_id");
+
             placeDetailsClass.setName(name);
             placeDetailsClass.setOpenCheck(openCheck);
             placeDetailsClass.setRatings(rating);
             placeDetailsClass.setCellphone(cellphone);
             placeDetailsClass.setWebsite(website);
+            placeDetailsClass.setPlaceID(placeID);
 
-          writeLocationDetailFull(placeDetailsClass.getName(),placeDetailsClass.getOpenCheck(),placeDetailsClass.getRatings(),placeDetailsClass.getCellphone(),placeDetailsClass.getWebsite());
+          writeLocationDetailFull(placeDetailsClass.getName(),placeDetailsClass.getOpenCheck(),placeDetailsClass.getRatings(),placeDetailsClass.getCellphone(),placeDetailsClass.getWebsite(),placeDetailsClass.getPlaceID());
 
             Log.d("GooglePlacesReadData", placeDetailsClass.toString());
       } catch (JSONException e) {
@@ -114,9 +119,9 @@ public class FetchDetailData extends AsyncTask<Object, String, String> {
   }
 
     // Writes Current Location to Detail Class
-    public void writeLocationDetailFull(String name, String openCheck, double ratings, String cellphone, String website) {
+    public void writeLocationDetailFull(String name, String openCheck, double ratings, String cellphone, String website, String placeID) {
 
-        placeDetailsClass = new PlaceDetailsClass(name,openCheck,ratings,cellphone,website);
+        placeDetailsClass = new PlaceDetailsClass(name,openCheck,ratings,cellphone,website,placeID);
 
         mDatabase.child("tmp").child(name).setValue(placeDetailsClass);
     }

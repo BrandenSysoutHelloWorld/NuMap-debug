@@ -10,8 +10,7 @@
         android:id="@+id/overlay_fav_landmark"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        tools:visibility="invisible">
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/landmark_fav_title"
@@ -25,7 +24,7 @@
             android:textSize="24sp" />
 
         <ImageButton
-            android:id="@+id/landmark_btn_return2"
+            android:id="@+id/landmarkFav_btn_return"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
@@ -39,7 +38,7 @@
             tools:ignore="ImageContrastCheck" />
 
         <Spinner
-            android:id="@+id/spinner"
+            android:id="@+id/fav_spin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
@@ -199,7 +198,32 @@
     <RelativeLayout
         android:id="@+id/main"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        tools:visibility="invisible">
+
+        <RelativeLayout
+            android:id="@+id/overlay_modes"
+            android:layout_width="70dp"
+            android:layout_height="370dp"
+            android:layout_below="@+id/autocomplete"
+            android:layout_alignBottom="@+id/map"
+            android:layout_marginBottom="250dp"
+            android:alpha="0.5"
+            android:background="#00424242">
+
+            <ImageButton
+                android:id="@+id/btn_current_location2"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="15dp"
+                android:contentDescription="@string/current_location"
+                android:src="@drawable/baseline_gps_fixed_black_24dp"
+                android:theme="@style/Theme.overlay"
+                tools:ignore="ImageContrastCheck" />
+        </RelativeLayout>
 
         <androidx.cardview.widget.CardView
             android:id="@+id/autocomplete"
@@ -235,6 +259,13 @@
             tools:context=".activities.MapsActivity">
 
         </androidx.fragment.app.FragmentContainerView>
+
+        <TextView
+            android:id="@+id/dest_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/autocomplete"
+            android:textAlignment="center" />
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_navigation_view"
@@ -359,9 +390,7 @@
                 android:layout_below="@+id/btn_landmarks"
                 android:layout_alignParentStart="true"
                 android:layout_alignParentEnd="true"
-                android:layout_alignParentBottom="true"
                 android:layout_marginTop="5dp"
-                android:layout_marginBottom="47dp"
                 android:contentDescription="@string/map_fav_landmark"
                 android:src="@drawable/baseline_star_black_24dp"
                 android:theme="@style/Theme.overlay"

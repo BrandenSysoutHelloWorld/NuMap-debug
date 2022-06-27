@@ -89,6 +89,9 @@
     <string name="update_username_title">Enter your new username</string>
     <string name="start_nav">Start</string>
     <string name="End_nav">End</string>
+    <string name="fav_remove">Remove Landmark</string>
+    <string name="share_copy">Copy Link</string>
+    <string name="share_fb">Share on Facebook</string>
 
 
 </resources>

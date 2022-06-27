@@ -1,6 +1,10 @@
 package za.edu.st10112216.numap.classes;
 
+import androidx.annotation.NonNull;
+
 import com.google.android.gms.maps.model.LatLng;
+
+import java.util.List;
 
 public class UserDetailsClass {
     String userID;
@@ -96,6 +100,7 @@ public class UserDetailsClass {
         this.lng = lng;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return  "Email Address: " + '\n'+ email+ '\n' + '\n' +
