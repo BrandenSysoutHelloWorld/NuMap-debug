@@ -2,7 +2,7 @@
     <!--
     Google Maps API KEY
     -->
-    <string name="map_key">AIzaSyDb1b4oYT79vClErZ9d6eCqgivPVk9PSvc</string>
+    <string name="map_key">API_KEY</string>
     <!--
     User Login and Registration Strings
     -->
